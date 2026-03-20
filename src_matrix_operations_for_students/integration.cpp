@@ -22,12 +22,11 @@ double simple_num_integral(int n) {
 double parallel_num_integral(int n) {
     vector<double> x(n);
     vector<double> res(n);
-    
-    //for (int i = 0; i < n; i++) {
+
     #pragma omp parallel
     {
         for (int i = 0; i < n; i++) {
-            double xi = (i + 0.5)/n;
+            x[i] = (i + 0.5)/n;
             res[i] += f(xi)/n;
         }
     }
