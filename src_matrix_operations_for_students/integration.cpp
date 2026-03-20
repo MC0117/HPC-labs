@@ -3,8 +3,9 @@
 #include <iostream>
 #include <iomanip>
 #include "include/Stopwatch.hpp"
+#include <vector.h>
 
-
+#define NUM_THREADS 4
 double f(double x) {
     return 3*x*x;
 }
@@ -17,6 +18,31 @@ double simple_num_integral(int n) {
     }
     return res;
 }
+
+double parallel_num_integral(int n) {
+    vector<double> x(n);
+    vector<double> res(n);
+    
+    //for (int i = 0; i < n; i++) {
+    #pragma omp parallel
+    {
+        for (int i = 0; i < n; i++) {
+            double xi = (i + 0.5)/n;
+            res[i] += f(xi)/n;
+        }
+    }
+    thread_barrier_wait():
+    int stride = 2;
+    while(stride == num_threads){ //maybe threads?
+    if(threadId % stride == 0):
+        x[threadId] = x[threadId] + x[threadId + (stride-1)]
+    stride *= 2;
+    thread_barrier_wait():
+    }
+    res += f(xi)/n;
+    return res;
+}
+
 
 
 int find_n_accurate() {
