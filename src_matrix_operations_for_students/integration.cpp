@@ -34,33 +34,12 @@ double parallel_num_integral(int n) {
     }
     // wait for all calculaitons to finish
     #pragma omp barrier
-    
-    // #pragma omp single
-    // {
-    //     std::cout << "{" << res[0];
-    //     for (int i = 1; i < num_threads; i++) {
-    //         std::cout << ", " << res[i];
-    //     } std::cout << "}" << std::endl;
-    // }
 
-    // reduce 
-    int stride = 1;
-    while (stride < num_threads) {
-        #pragma omp parallel shared(res) 
-        {
-            int threadId = omp_get_thread_num();
-            if (threadId % stride == 0) {
-                if (threadId + stride < num_threads) {
-                    res[threadId] = res[threadId] + res[threadId + stride];
-                }
-            }
-        }
-        stride *= 2;
-        #pragma omp barrier
+    double result = 0.0;
+    for (double partial : res) {
+        result += partial;
     }
-    // #pragma omp single
-    // std::cout << "n: " << n << " Res: " << res[0] << std::endl;
-    return res[0];
+    return result;
 }
 
 
