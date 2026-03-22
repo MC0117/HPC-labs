@@ -6,7 +6,8 @@
 #include <vector>
 #include <omp.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 8
+
 double f(double x) {
     return 3*x*x;
 }
@@ -21,35 +22,44 @@ double simple_num_integral(int n) {
 }
 
 double parallel_num_integral(int n) {
-    std::vector<double> res(n);
-    if (omp_get_max_threads() < n) std::cerr << "Max threads exceeded" << std::endl;
-    omp_set_num_threads(n);
+    // int num_threads = omp_get_num_threads();
+    int num_threads = NUM_THREADS;
+    std::vector<double> res(num_threads, 0.0);
     // parallel calculation of f(x)
-    #pragma omp parallel shared(res)
-    {
-        int num_thread = omp_get_thread_num();
-        int x = (num_thread + 0.5) / n;
-        res[num_thread] = f(x) / n;
+    #pragma omp parallel for shared(res)
+    for (int i = 0; i < n; i++) {
+        double xi = (i + 0.5)/n;
+        int threadId = omp_get_thread_num();
+        res[threadId] += f(xi)/n;
     }
     // wait for all calculaitons to finish
     #pragma omp barrier
+    
+    // #pragma omp single
+    // {
+    //     std::cout << "{" << res[0];
+    //     for (int i = 1; i < num_threads; i++) {
+    //         std::cout << ", " << res[i];
+    //     } std::cout << "}" << std::endl;
+    // }
+
     // reduce 
     int stride = 1;
-    while (stride < n) {
+    while (stride < num_threads) {
         #pragma omp parallel shared(res) 
         {
-            int num_thread = omp_get_thread_num();
-            if (num_thread % stride == 0) {
-                if (num_thread + (stride - 1) < n) {
-                    res[num_thread] = res[num_thread] + res[num_thread + (stride - 1)];
-                } else {
-                    res[num_thread] = res[num_thread];
+            int threadId = omp_get_thread_num();
+            if (threadId % stride == 0) {
+                if (threadId + stride < num_threads) {
+                    res[threadId] = res[threadId] + res[threadId + stride];
                 }
             }
         }
         stride *= 2;
         #pragma omp barrier
     }
+    // #pragma omp single
+    // std::cout << "n: " << n << " Res: " << res[0] << std::endl;
     return res[0];
 }
 
@@ -59,7 +69,7 @@ int find_n_accurate() {
     double correct = 1.0;
     int n = 1;
     while (true) {
-        double res = simple_num_integral(n);
+        double res = parallel_num_integral(n);
         if (abs(correct - res) < 0.00000001)
             break;
         n++;
@@ -68,6 +78,7 @@ int find_n_accurate() {
 }
 
 int main() {
+    omp_set_num_threads(NUM_THREADS);
     Stopwatch stopwatch;
     stopwatch.start();
     int n = find_n_accurate();
