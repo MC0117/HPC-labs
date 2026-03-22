@@ -58,8 +58,8 @@ debug:
 
 
 integr:
-	$(CXX) -O0 $(CXXFLAGS) integration.cpp -c -o integration.o
-	$(CXX) integration.o $(LDFLAGS) $(LDFLAGS_NOOMP) -o integration
+	$(CXX) -O0 $(CXXFLAGS) $(CXXFLAGS_OMP) integration.cpp -c -o integration.o
+	$(CXX) integration.o $(LDFLAGS) $(LDFLAGS_OMP) -o integration
 
 clean:
 	rm -f main_debug.o
