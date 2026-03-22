@@ -3,7 +3,8 @@
 #include <iostream>
 #include <iomanip>
 #include "include/Stopwatch.hpp"
-#include <vector.h>
+#include <vector>
+#include <omp.h>
 
 #define NUM_THREADS 4
 double f(double x) {
@@ -20,26 +21,36 @@ double simple_num_integral(int n) {
 }
 
 double parallel_num_integral(int n) {
-    vector<double> x(n);
-    vector<double> res(n);
-
-    #pragma omp parallel
+    std::vector<double> res(n);
+    if (omp_get_max_threads() < n) std::cerr << "Max threads exceeded" << std::endl;
+    omp_set_num_threads(n);
+    // parallel calculation of f(x)
+    #pragma omp parallel shared(res)
     {
-        for (int i = 0; i < n; i++) {
-            x[i] = (i + 0.5)/n;
-            res[i] += f(xi)/n;
+        int num_thread = omp_get_thread_num();
+        int x = (num_thread + 0.5) / n;
+        res[num_thread] = f(x) / n;
+    }
+    // wait for all calculaitons to finish
+    #pragma omp barrier
+    // reduce 
+    int stride = 1;
+    while (stride < n) {
+        #pragma omp parallel shared(res) 
+        {
+            int num_thread = omp_get_thread_num();
+            if (num_thread % stride == 0) {
+                if (num_thread + (stride - 1) < n) {
+                    res[num_thread] = res[num_thread] + res[num_thread + (stride - 1)];
+                } else {
+                    res[num_thread] = res[num_thread];
+                }
+            }
         }
+        stride *= 2;
+        #pragma omp barrier
     }
-    thread_barrier_wait():
-    int stride = 2;
-    while(stride == num_threads){ //maybe threads?
-    if(threadId % stride == 0):
-        x[threadId] = x[threadId] + x[threadId + (stride-1)]
-    stride *= 2;
-    thread_barrier_wait():
-    }
-    res += f(xi)/n;
-    return res;
+    return res[0];
 }
 
 
