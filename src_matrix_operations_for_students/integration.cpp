@@ -9,7 +9,8 @@
 #define NUM_THREADS 8
 
 double f(double x) {
-    return 3*x*x;
+    // f(x) = sin(25 pi/2 x)
+    return sin(39.2699081699*x);
 }
 
 double simple_num_integral(int n) {
@@ -55,7 +56,7 @@ double reduce_num_integral(int n) {
 
 
 int find_n_accurate(int method) {
-    double correct = 1.0;
+    double correct = 0.0254647908954;
     int n = 1;
     while (true) {
         double res;
