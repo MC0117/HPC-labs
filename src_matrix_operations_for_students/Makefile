@@ -24,7 +24,7 @@ LDFLAGS_OMP+=-fopenmp
 # AVX2
 CXXFLAGS+=-ftree-vectorize -fstrict-aliasing
 
-all: nosimd simd openmp debug
+all: nosimd simd openmp debug integr
 	@echo "Compiling all targets"
 
 

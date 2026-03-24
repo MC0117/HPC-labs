@@ -56,6 +56,7 @@ double reduce_num_integral(int n) {
 
 
 int find_n_accurate(int method) {
+    // 2 / (25 pi)
     double correct = 0.0254647908954;
     int n = 1;
     while (true) {
