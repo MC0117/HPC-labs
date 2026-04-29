@@ -33,17 +33,55 @@ void lbm_comm_init_ex2(lbm_comm_t * comm, int total_width, int total_height)
 /****************************************************/
 void lbm_comm_ghost_exchange_ex2(lbm_comm_t * comm, lbm_mesh_t * mesh)
 {
-	//
-	// TODO: Implement the 1D communication with blocking MPI functions using
-	//       odd/even communications.
-	//
-	// To be used:
-	//    - DIRECTIONS: the number of doubles composing a cell
-	//    - double[9] lbm_mesh_get_cell(mesh, x, y): function to get the address of a particular cell.
-	//    - comm->width : The with of the local sub-domain (containing the ghost cells)
-	//    - comm->height : The height of the local sub-domain (containing the ghost cells)
-	
-	//example to access cell
-	//double * cell = lbm_mesh_get_cell(mesh, local_x, local_y);
-	//double * cell = lbm_mesh_get_cell(mesh, comm->width - 1, 0);
+	// odd -> send first
+	if (comm->rank_x % 2) {
+		//check if not in leftmost pos
+		for(int i = 0; i < comm->height; i++){
+			// send left
+			if(comm->rank_x !=0){
+				double * cell = lbm_mesh_get_cell(mesh, 1, i);
+				MPI_Send((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x-1,0,MPI_COMM_WORLD);
+			} 
+			// receive right
+			if(comm->rank_x != comm->nb_x-1){
+				double * cell = lbm_mesh_get_cell(mesh, comm->width-1, i);
+				MPI_Recv((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+			// send right
+			if(comm->rank_x != comm->nb_x-1){
+				double * cell = lbm_mesh_get_cell(mesh, comm->width-2, i);
+				MPI_Send((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x+1,1,MPI_COMM_WORLD);
+			}
+			// receive left
+			if(comm->rank_x !=0){
+				double * cell = lbm_mesh_get_cell(mesh, 0, i);
+				MPI_Recv((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x-1,1,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+		}
+	} else {
+		// even -> receive first
+		for(int i = 0; i < comm->height; i++){
+			// receive right
+			if(comm->rank_x != comm->nb_x-1){
+				double * cell = lbm_mesh_get_cell(mesh, comm->width-1, i);
+				MPI_Recv((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x+1,0,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+			// send left
+			if(comm->rank_x !=0){
+				double * cell = lbm_mesh_get_cell(mesh, 1, i);
+				MPI_Send((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x-1,0,MPI_COMM_WORLD);
+			} 
+			// receive left
+			if(comm->rank_x !=0){
+				double * cell = lbm_mesh_get_cell(mesh, 0, i);
+				MPI_Recv((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x-1,1,MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+			}
+			// send right
+			if(comm->rank_x != comm->nb_x-1){
+				double * cell = lbm_mesh_get_cell(mesh, comm->width-2, i);
+				MPI_Send((void*)cell, DIRECTIONS, MPI_DOUBLE, comm->rank_x+1,1,MPI_COMM_WORLD);
+			}
+		}
+	}
+
 }
